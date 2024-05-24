@@ -1,10 +1,10 @@
 === Contact Form Plugin by Fluent Forms for Quiz, Survey, and Drag & Drop WP Form Builder ===
-Contributors: techjewel,adreastrian,heera,wpmanageninja
+Contributors: techjewel,adreastrian,heera,pyrobd,hrdelwar,dhrupo,wpmanageninja
 Tags: contact form, wp forms, forms, form builder, custom form
 Requires at least: 4.5
-Tested up to: 6.5.2
+Tested up to: 6.5.3
 Requires PHP: 7.4
-Stable tag: 5.1.16
+Stable tag: 5.1.18
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -450,6 +450,16 @@ You can get support from our official support thread at <a href="https://wpmanag
 12. Asset Loading Comparison with Other Plugins
 
 == Changelog ==
+
+= 5.1.18 (Date: May 23, 2024) =
+- Fixes cross form captcha error
+
+= 5.1.17 (Date: May 16, 2024) =
+- Improved capability check for global settings & manager settings
+- Adds label shortcode support in global default message
+- Changed type of source_url database column from varchar to text
+- Improved ux of form active/inactive loader
+- Improved keyword based restriction
 
 = 5.1.16 (Date: May 6, 2024) =
 - Fix editor vulnerability for attacker with contributor level access (Wordpress version 6.4.0)
