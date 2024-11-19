@@ -111,6 +111,10 @@ class ShortCodeParser
 
     protected static function parseShortCodeFromString($parsable, $isUrl = false, $isHtml = false)
     {
+        if ('0' === $parsable) {
+            return $parsable;
+        }
+
         if (! $parsable) {
             return '';
         }
@@ -160,7 +164,7 @@ class ShortCodeParser
             }
 
             if ($isUrl) {
-                $value = urlencode($value);
+                $value = rawurlencode($value);
             }
 
             return $value;
@@ -209,7 +213,7 @@ class ShortCodeParser
         }
 
         if ($isHtml) {
-            $originalInput = static::$store['original_inputs'][$key];
+            $originalInput = ArrayHelper::get(static::$store['original_inputs'], $key, '');
             $originalInput = apply_filters_deprecated(
                 'fluentform_response_render_' . $field['element'],
                 [

@@ -209,6 +209,9 @@ class Form
 
         if ((isset($request[$paramKey])) && !wp_doing_ajax()) {
             $formId = (int) ArrayHelper::get($request, $paramKey);
+            if (!Helper::isConversionForm($formId)) {
+                return;
+            }
             $shareKey = ArrayHelper::get($request, 'form');
             $this->renderFormHtml($formId, $shareKey);
         }
@@ -560,7 +563,7 @@ class Form
         ]);
     
         /* This filter is deprecated and will be removed soon */
-        $disableAnalytics = apply_filters('fluentform-disabled_analytics', false);
+        $disableAnalytics = apply_filters('fluentform-disabled_analytics', true);
 
         if (!apply_filters('fluentform/disabled_analytics', $disableAnalytics)) {
             if (!Acl::hasAnyFormPermission($form->id)) {
@@ -739,7 +742,7 @@ class Form
             }
         }
         /* This filter is deprecated and will be removed soon */
-        $status = apply_filters('fluentform-disabled_analytics', false);
+        $status = apply_filters('fluentform-disabled_analytics', true);
 
         if (!apply_filters('fluentform/disabled_analytics', $status)) {
             if (!Acl::hasAnyFormPermission($form->id)) {

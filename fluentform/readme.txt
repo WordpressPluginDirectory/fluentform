@@ -2,9 +2,9 @@
 Contributors: techjewel,adreastrian,heera,pyrobd,hrdelwar,dhrupo,wpmanageninja
 Tags: contact form, wp forms, forms, form builder, custom form
 Requires at least: 4.5
-Tested up to: 6.6.2
+Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 5.2.2
+Stable tag: 5.2.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -292,7 +292,6 @@ Improve your website’s efficiency by bridging the gap from visitor input to em
 * Twilo
 * GetGist
 * ConvertKit
-* WP Social Ninja
 * BuddyBoss
 * FluentBooking
 * Notion
@@ -452,6 +451,54 @@ You can get support from our official support thread at <a href="https://wpmanag
 12. Asset Loading Comparison with Other Plugins
 
 == Changelog ==
+
+= 5.2.5 (Date: November 19, 2024) =
+- Adds form editor undo/redo functionality (Beta)
+- Adds global option to select date and time format for admin page views
+- Adds submission & field-specific shortcode
+- Adds "Go to page" feature for pagination
+- Adds global settings sidebar custom links sub-menu style
+- Adds "DELETE" input prompt on form deletion
+- Improved Security by working with Plugin Security Certification (PSC) by CleanTalk
+- Improved accessibility (focus on radio buttons,t&c text screen reader support)
+- Improved translations
+- Improved integrations API logs bulk replay actions functionality
+- Improved submission logs API cals retry action
+- Improved synchronization of "All Entries" chart with form ID and date range
+- Improved initially disabling of analytics
+- Improved Mailchimp date field with more format options
+- Improved checkable field bulk options in the editor (supports : on value & label)
+- Improved overall ui ux issues
+- Fixes shortcode copy message showing multiple times on entry page
+- Fixes screen reading issue with name fields
+- Fixes mobile responsiveness of tools page sidebar navigation
+- Fixes double submission when submit button is clicked twice with custom URL redirection setup
+- Fixes undefined shortcode key for conditionally hidden fields
+- Fixes FluentCRM dynamic tag selection based on subscriptions plan
+- Fixes Visual Report filter issue
+
+= 5.2.4 (Date: October 1, 2024) =
+- Fix calculation issue
+
+= 5.2.3 (Date: September 30, 2024) =
+- Adds form edit history (Beta)
+- Adds editor keyboard navigation and shortcuts
+- Adds form-specific permissions in the permission manager
+- Improved condition change event handling
+- Improved All Forms pages form ordering to retain on reload
+- Fixes exposing the conversational form URL
+- Fixes empty URL GET parameters in conversational form shortcodes
+- Fixes all form filter selections being retained on page reload
+- Fixes next button trapping keyboard focus
+- Fixes confirmation redirect URL handling for spaces
+- Fixes entries export issue for forms with a large number of fields (250+ fields)
+- Fixes dynamic SmartCodes in conditional fields
+- Fixes checkable field “not-equal” condition on conversation form
+- Fixes exporting numeric fields to Excel
+- Fixes label asterisk style with elementor widget
+- Fixes conditional logic with numeric formatting
+- Fixes Checkable Grid submission issue
+
 
 = 5.2.2 (Date: September 11, 2024) =
 - Update tested WordPress Version

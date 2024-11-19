@@ -292,8 +292,8 @@ $app->addFilter('fluentform/filter_insert_data', function ($data) {
 
 $app->addFilter('fluentform/disabled_analytics', function ($status) {
     $settings = get_option('_fluentform_global_form_settings');
-    if (isset($settings['misc']['isAnalyticsDisabled']) && $settings['misc']['isAnalyticsDisabled']) {
-        return true;
+    if (isset($settings['misc']['isAnalyticsDisabled']) && !$settings['misc']['isAnalyticsDisabled']) {
+        return false;
     }
 
     return $status;
@@ -303,6 +303,11 @@ $app->addFilter('fluentform/disabled_analytics', function ($status) {
 $app->addFilter('fluentform/permission_callback', function ($status, $permission) {
     return  \FluentForm\App\Modules\Acl\Acl::getCurrentUserCapability();
 }, 10, 2);
+
+// Get current user allowed form ids, if current user has specific form permission
+$app->addFilter('fluentform/current_user_allowed_forms', function ($form){
+    return \FluentForm\App\Services\Manager\FormManagerService::getUserAllowedForms();
+});
 
 $app->addFilter('fluentform/validate_input_item_input_email', ['\FluentForm\App\Helpers\Helper', 'isUniqueValidation'], 10, 5);
 

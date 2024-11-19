@@ -3,6 +3,7 @@
 namespace FluentForm\App\Models;
 
 use Exception;
+use FluentForm\App\Services\Manager\FormManagerService;
 use FluentForm\Framework\Support\Arr;
 
 class Submission extends Model
@@ -291,6 +292,7 @@ class Submission extends Model
     public function allSubmissions($attributes = []) {
         $customQuery = $this->customQuery($attributes);
         $search = Arr::get($attributes, 'search');
+        $allowFormIds = FormManagerService::getUserAllowedForms();
 
         $result = $customQuery
             ->with([
@@ -299,6 +301,9 @@ class Submission extends Model
                 }
             ])
             ->select(['id', 'form_id', 'status', 'created_at', 'browser', 'currency', 'total_paid'])
+            ->when($allowFormIds, function ($q) use ($allowFormIds){
+                return $q->whereIn('form_id', $allowFormIds);
+            })
             ->when($search, function ($q) use ($search){
                 return $q->orWhereHas('form', function ($q) use ($search) {
                     return $q->orWhere('title', 'LIKE', "%{$search}%");
@@ -309,7 +314,10 @@ class Submission extends Model
 
         foreach ($result['data'] as &$entry) {
             $entry['entry_url'] = admin_url('admin.php?page=fluent_forms&route=entries&form_id=' . $entry['form_id'] . '#/entries/' . $entry['id']);
-            $entry['human_date'] = human_time_diff(strtotime($entry['created_at']), strtotime(current_time('mysql')));
+
+            if (apply_filters('fluentform/entries_human_date', false)) {
+                $entry['human_date'] = human_time_diff(strtotime($entry['created_at']), strtotime(current_time('mysql')));
+            }
         }
 
         $result['available_forms'] = $this->availableForms();
@@ -320,6 +328,9 @@ class Submission extends Model
     public function availableForms()
     {
         $form = new Form();
+        if ($allowForms = FormManagerService::getUserAllowedForms()) {
+            return $form->select('id', 'title')->whereIn('id', $allowForms)->get();
+        }
         return $form->select('id', 'title')->get();
     }
 
@@ -331,6 +342,24 @@ class Submission extends Model
         $status = Arr::get($attributes, 'entry_status');
         $start = Arr::get($attributes, 'date_range.0', '');
         $end = Arr::get($attributes, 'date_range.1', '');
+        $dateRange = Arr::get($attributes, 'date_range');
+
+        if ('all' === $dateRange) {
+            $firstItem = self::orderBy('created_at', 'ASC')
+                ->when($formId, function ($q) use ($formId) {
+                    return $q->where('form_id', $formId);
+                })
+                ->when($status, function ($q2) use ($status) {
+                    return $q2->where('status', $status);
+                })
+                ->first();
+
+            if ($firstItem && $firstItem->created_at) {
+                $from = date('Y-m-d H:i:s', strtotime($firstItem->created_at));
+                $to = date('Y-m-d H:i:s');
+            }
+        }
+
 
         if ($start && $startTime = (strtotime($start) + 24 * 60 * 60)) {
             if ($start === $end) {

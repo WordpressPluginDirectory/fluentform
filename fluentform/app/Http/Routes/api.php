@@ -24,6 +24,8 @@ $router->prefix('forms')->withPolicy('FormPolicy')->group(function ($router) {
         $router->get('fields', 'FormController@fields');
         $router->get('shortcodes', 'FormController@shortcodes');
         $router->get('findShortCodePage', 'FormController@findShortCodePage');
+        $router->get('editHistory', 'FormController@formEditHistory');
+        $router->post('clearHistory', 'FormController@clearEditHistory');
     });
 });
 
@@ -143,7 +145,7 @@ $router->post('form-submit', 'SubmissionHandlerController@submit')->withPolicy('
 * Form Report
 */
 $router->prefix('report')->withPolicy('ReportPolicy')->group(function ($router) {
-    $router->get('/submissions', 'ReportController@submissions');
+    $router->post('/submissions', 'ReportController@submissions');
     $router->get('/forms/{form_id}', 'ReportController@form');
 });
 /*
