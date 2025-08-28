@@ -60,20 +60,27 @@ class Converter
             if ($hasSaveAndResume && $saveAndResumeData) {
                 $response = ArrayHelper::get($saveAndResumeData, 'response');
                 $questionId = ArrayHelper::get($question, 'id');
-                $value = $questionId ? ArrayHelper::get($response, $questionId) : null;
-                if (!empty($value)) {
-                    if (ArrayHelper::get($field, 'element') == 'input_file') {
-                        $files = ArrayHelper::get($response, $questionId);
-                        foreach ($files as $file) {
-                            $question['answer'][] = ArrayHelper::get($file, 'data_src');
+
+                // Special handling for section breaks and custom HTML
+                if (ArrayHelper::get($field, 'element') == 'section_break' || ArrayHelper::get($field, 'element') == 'custom_html') {
+                    $question['answered'] = true;
+                    $question['answer'] = 'section_viewed';
+                } else {
+                    $value = $questionId ? ArrayHelper::get($response, $questionId) : null;
+                    if (!empty($value)) {
+                        if (ArrayHelper::get($field, 'element') == 'input_file') {
+                            $files = ArrayHelper::get($response, $questionId);
+                            foreach ($files as $file) {
+                                $question['answer'][] = ArrayHelper::get($file, 'data_src');
+                            }
+                        } elseif (
+                            ArrayHelper::get($field, 'element') == 'rangeslider' ||
+                            ArrayHelper::get($field, 'element') == 'subscription_payment_component'
+                        ) {
+                            $question['answer'] = +$value;
+                        } else {
+                            $question['answer'] = $value;
                         }
-                    } elseif (
-                        ArrayHelper::get($field, 'element') == 'rangeslider' ||
-                        ArrayHelper::get($field, 'element') == 'subscription_payment_component'
-                    ) {
-                        $question['answer'] = +$value;
-                    } else {
-                        $question['answer'] = $value;
                     }
                 }
             }
@@ -90,12 +97,21 @@ class Converter
                     $fields = ArrayHelper::get($field, 'fields');
                     $field['fields'] = array_merge(array_flip($order), $fields);
                 }
+
+                $provider = ArrayHelper::get($field, 'settings.autocomplete_provider');
+                $isLegacyProvider = !ArrayHelper::has($field, 'settings.autocomplete_provider');
                 $googleAutoComplete = 'yes' === ArrayHelper::get($field, 'settings.enable_g_autocomplete');
-                if (defined('FLUENTFORMPRO') && $googleAutoComplete) {
+                if (defined('FLUENTFORMPRO') && ($provider === 'google' || ($isLegacyProvider && $googleAutoComplete))) {
                     $question['ff_map_autocomplete'] = true;
                     $question['ff_with_g_map'] = 'yes' == ArrayHelper::get($field, 'settings.enable_g_map');
                     $question['ff_with_auto_locate'] = ArrayHelper::get($field, 'settings.enable_auto_locate', false);
                     $question['GmapApiKey'] = apply_filters('fluentform/conversational_form_address_gmap_api_key', '');
+                }
+                
+                // Handle HTML5 geolocation
+                if ($provider === 'html5') {
+                    $question['ff_html5_geolocate'] = true;
+                    $question['ff_html5_locate'] = ArrayHelper::get($field, 'settings.enable_auto_locate', 'on_click');
                 }
                 
                 foreach ($field['fields'] as $item) {
@@ -154,8 +170,8 @@ class Converter
                             $question['required'] = true;
                         }
                         
-                        if (!$hasSaveAndResume && $defaultValue = self::setDefaultValue(ArrayHelper::get($item, 'attributes.value'), $item, $form)) {
-                            $item['attributes']['value'] = $defaultValue;
+                        if (!$hasSaveAndResume) {
+                            $item['attributes']['value'] = self::setDefaultValue(ArrayHelper::get($item, 'attributes.value', ''), $item, $form);;
                         }
                         $question['fields'][] = wp_parse_args($itemQuestion, $item);
                     }
@@ -322,10 +338,14 @@ class Converter
                 ];
                 
                 if ('terms_and_condition' === $field['element']) {
-                    $question['options'][] = [
-                        'label' => ArrayHelper::get($field, 'settings.tc_dis_agree_text', 'I don\'t accept'),
-                        'value' => 'off',
-                    ];
+                    $hideDisagreeOption = ArrayHelper::isTrue($field, 'settings.hide_disagree');
+                    
+                    if (!$hideDisagreeOption) {
+                        $question['options'][] = [
+                            'label' => ArrayHelper::get($field, 'settings.tc_dis_agree_text', 'I don\'t accept'),
+                            'value' => 'off',
+                        ];
+                    }
                 }
                 
                 $question['nextStepOnAnswer'] = true;
@@ -414,6 +434,11 @@ class Converter
                 } else {
                     $question['step'] = 1;
                 }
+
+                $enabledQtyMapping = 'yes' === ArrayHelper::get($field, 'settings.enable_target_product');
+                if ($enabledQtyMapping && $targetProductName = ArrayHelper::get($field, 'settings.target_product')) {
+                    $question['targetProduct'] = $targetProductName;
+                }
                 
                 $question['is_calculable'] = true;
                 $question['type'] = 'FlowFormRangesliderType';
@@ -428,7 +453,7 @@ class Converter
                     $question['counter'] = count($questions) - 1;
                     $lastQuestion['has_save_and_resume_button'] = true;
                     $lastQuestion['save_and_resume_button'] = $question;
-                    $form->hasSaveAndRusemeButton = true;
+                    $form->hasSaveAndResumeButton = true;
                 }
                 // Skip Save Progress Button as a separate question
                 continue;
@@ -666,6 +691,7 @@ class Converter
                 
                 $form->turnstile = [
                     'siteKey' => $siteKey,
+                    'appearance' => $appearance,
                 ];
                 
                 wp_enqueue_script(
@@ -675,6 +701,13 @@ class Converter
                     FLUENTFORM_VERSION,
                     false
                 );
+
+                // for WP Rocket compatibility
+                wp_script_add_data('turnstile_conv', 'data-cfasync', 'false');
+                
+                if ('interaction-only' === $appearance) {
+                    continue;
+                }
             } elseif ('payment_coupon' === $field['element']) {
                 if ($hasSaveAndResume && $saveAndResumeData) {
                     if ($coupons = ArrayHelper::get($saveAndResumeData, 'response.__ff_all_applied_coupons')) {

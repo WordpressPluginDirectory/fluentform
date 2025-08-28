@@ -235,9 +235,10 @@ class FormValidationService
 
             $interval = date('Y-m-d H:i:s', strtotime(current_time('mysql')) - $minSubmissionInterval);
 
+            $clientIp = sanitize_text_field($this->app->request->getIp());
             $submissionCount = wpFluent()->table('fluentform_submissions')
                 ->where('status', '!=', 'trashed')
-                ->where('ip', $this->app->request->getIp())
+                ->where('ip', $clientIp ?: '0.0.0.0')
                 ->where('created_at', '>=', $interval)
                 ->count();
 
@@ -322,6 +323,7 @@ class FormValidationService
                 if (!count(Helper::arrayFilterRecursive($filteredFormData))) {
                     $defaultMessage = __('Sorry! You can\'t submit an empty form.','fluentform');
                     $customMessage = Arr::get($settings, 'message');
+                    $customMessage = apply_filters('fluentform/deny_empty_submission_message', $customMessage, $this->form);
 
                     throw new ValidationException('', 422, null,  [
                         'errors' => [
@@ -349,23 +351,23 @@ class FormValidationService
             return;
         }
 
-        $ip = $this->app->request->getIp();
-        if (is_array($ip)) {
-            $ip = Arr::get($ip, '0');
+        $rawIp = $this->app->request->getIp();
+        if (is_array($rawIp)) {
+            $rawIp = Arr::get($rawIp, '0');
         }
-        $this->checkIpRestriction($settings, $ip);
+        $ip = sanitize_text_field($rawIp);
+        if ($ip) {
+            $this->checkIpRestriction($settings, $ip);
+        }
 
         $isCountryRestrictionEnabled = Arr::get($settings, 'fields.country.status');
-        if ($ipInfo = $this->getIpInfo()) {
-            $country = Arr::get($ipInfo, 'country');
-            if ($isCountryRestrictionEnabled) {
-                $this->checkCountryRestriction($settings, $country);
-            }
-        } else {
-            if ($isCountryRestrictionEnabled) {
+        if ($isCountryRestrictionEnabled) {
+            if ($ipInfo = $this->getIpInfo($ip)) {
+                $country = Arr::get($ipInfo, 'country');
+            } else {
                 $country = $this->getIpBasedOnCountry($ip);
-                $this->checkCountryRestriction($settings, $country);
             }
+            $this->checkCountryRestriction($settings, $country);
         }
 
         $this->checkKeyWordRestriction($settings);
@@ -536,6 +538,11 @@ class FormValidationService
      */
     private function validateReCaptcha()
     {
+        // Check if autoload_captcha is enabled and if it's not recaptcha, skip validation
+        if ($this->shouldSkipCaptchaValidation('recaptcha')) {
+            return;
+        }
+
         $hasAutoRecap =  apply_filters_deprecated(
             'ff_has_auto_recaptcha',
             [
@@ -576,6 +583,10 @@ class FormValidationService
      */
     private function validateHCaptcha()
     {
+        // Check if autoload_captcha is enabled and if it's not hcaptcha, skip validation
+        if ($this->shouldSkipCaptchaValidation('hcaptcha')) {
+            return;
+        }
         $hasAutoHcap = apply_filters_deprecated(
             'ff_has_auto_hcaptcha',
             [
@@ -613,6 +624,11 @@ class FormValidationService
      */
     private function validateTurnstile()
     {
+        // Check if autoload_captcha is enabled and if it's not turnstile, skip validation
+        if ($this->shouldSkipCaptchaValidation('turnstile')) {
+            return;
+        }
+
         $hasAutoTurnsTile = apply_filters_deprecated(
             'ff_has_auto_turnstile',
             [
@@ -677,12 +693,15 @@ class FormValidationService
      *
      * @throws ValidationException
      */
-    private function getIpInfo() {
+    private function getIpInfo($ip) {
         $token = Helper::getIpinfo();
-        $url = 'https://ipinfo.io';
-        if ($token) {
-            $url = 'https://ipinfo.io/?token=' . $token;
+        
+        if (!$token) {
+            $message = __('Sorry! Please provide valid token for ipinfo.io in global settings.', 'fluentform');
+            self::throwValidationException($message);
         }
+        
+        $url = 'https://ipinfo.io/' . $ip . '?token=' . $token;
         $data = wp_remote_get($url);
         $code = wp_remote_retrieve_response_code($data);
         $body = wp_remote_retrieve_body($data);
@@ -759,7 +778,7 @@ class FormValidationService
 
             if ($failedSubmissionIfExists || $allowSubmissionIfNotExists) {
                 $defaultMessage = __('Sorry! You can\'t submit a form from your IP address.', 'fluentform');
-                $message = Arr::get($settings, 'fields.ip.message', $defaultMessage);
+                $message = apply_filters('fluentform/ip_restriction_message', Arr::get($settings, 'fields.ip.message', $defaultMessage), $this->form);
                 self::throwValidationException($message);
             }
         }
@@ -780,7 +799,7 @@ class FormValidationService
 
             if ($failedSubmissionIfExists || $allowSubmissionIfNotExists) {
                 $defaultMessage = __('Sorry! You can\'t submit this form from the country you are residing.', 'fluentform');
-                $message = Arr::get($settings, 'fields.country.message', $defaultMessage);
+                $message = apply_filters('fluentform/country_restriction_message', Arr::get($settings, 'fields.country.message', $defaultMessage), $this->form);
                 self::throwValidationException($message);
             }
         }
@@ -792,8 +811,15 @@ class FormValidationService
             return;
         }
 
-        $providedKeywords = explode(',', Arr::get($settings, 'fields.keywords.values'));
-        $providedKeywords =  array_map('trim', $providedKeywords);
+        $keywords = Arr::get($settings, 'fields.keywords.values');
+        if (!$keywords || !is_string($keywords)) {
+            return;
+        }
+        $providedKeywords = explode(',', $keywords);
+        $providedKeywords =  array_filter(array_map('trim', $providedKeywords));
+        if (!$providedKeywords) {
+            return;
+        }
         $inputSubmission = array_intersect_key(
             $this->formData,
             array_flip(
@@ -803,7 +829,7 @@ class FormValidationService
             )
         );
         $defaultMessage = __('Sorry! Your submission contains some restricted keywords.', 'fluentform');
-        $message = Arr::get($settings, 'fields.keywords.message', $defaultMessage);
+        $message = apply_filters('fluentform/keyword_restriction_message', Arr::get($settings, 'fields.keywords.message', $defaultMessage), $this->form);
 
         self::checkKeywordsMatching($inputSubmission, $message, $providedKeywords);
     }
@@ -834,5 +860,35 @@ class FormValidationService
                 ],
             ],
         ]);
+    }
+
+    /**
+     * Check if captcha validation should be skipped based on autoload captcha settings
+     *
+     * When autoload captcha is enabled, only the selected captcha type should be validated.
+     * This method returns true if the current captcha type is NOT the selected autoload type,
+     * preventing unnecessary validation of multiple captcha types on the same form.
+     *
+     * @param string $captchaType The captcha type to check ('recaptcha', 'hcaptcha', 'turnstile')
+     * @return bool True if validation should be skipped, false otherwise
+     */
+    private function shouldSkipCaptchaValidation($captchaType)
+    {
+        $globalSettings = get_option('_fluentform_global_form_settings');
+        $autoloadEnabled = Arr::get($globalSettings, 'misc.autoload_captcha');
+
+        // If autoload captcha is not enabled, don't skip any validation
+        if (!$autoloadEnabled) {
+            return false;
+        }
+
+        $selectedCaptchaType = Arr::get($globalSettings, 'misc.captcha_type');
+
+        // If the current captcha type matches the selected autoload type, proceed with validation
+        if ($captchaType === $selectedCaptchaType) {
+            return false;
+        }
+
+        return true; // Skip validation for non-selected captcha types
     }
 }

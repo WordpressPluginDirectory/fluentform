@@ -58,6 +58,7 @@ class Menu
         $fluentFormAdminCSS = fluentFormMix('css/fluent-forms-admin.css');
         $addOnsCss = fluentFormMix('css/add-ons.css');
         $adminDocCss = fluentFormMix('css/admin_docs.css');
+        $reportsCss = fluentFormMix('css/fluent-forms-reports.css');
         if (is_rtl()) {
             $settingsGlobalStyle = fluentFormMix('css/settings_global_rtl.css');
             $allFormsStyle = fluentFormMix('css/fluent-all-forms-rtl.css');
@@ -65,6 +66,7 @@ class Menu
             $fluentFormAdminCSS = fluentFormMix('css/fluent-forms-admin-rtl.css');
             $addOnsCss = fluentFormMix('css/add-ons-rtl.css');
             $adminDocCss = fluentFormMix('css/admin_docs_rtl.css');
+            $reportsCss = fluentFormMix('css/fluent-forms-reports-rtl.css');
         }
 
         wp_register_style(
@@ -181,6 +183,22 @@ class Menu
         );
 
         wp_register_script(
+            'fluentform_reports',
+            fluentFormMix('js/reports.js'),
+            ['jquery'],
+            FLUENTFORM_VERSION,
+            true
+        );
+
+        wp_register_style(
+            'fluentform_reports',
+            $reportsCss,
+            [],
+            FLUENTFORM_VERSION,
+            'all'
+        );
+
+        wp_register_script(
             'fluentform_all_entries',
             fluentFormMix('js/all_entries.js'),
             ['jquery', 'fluentform_chart_js', 'fluentform_vue_chart_js'],
@@ -264,7 +282,7 @@ class Menu
         wp_enqueue_script('fluent_forms_global');
         wp_localize_script('fluent_forms_global', 'fluent_forms_global_var', [
             'fluent_forms_admin_nonce' => wp_create_nonce('fluent_forms_admin_nonce'),
-            'ajaxurl'                  => admin_url('admin-ajax.php'),
+            'ajaxurl'                  => Helper::getAjaxUrl(),
             'admin_i18n'               => TranslationString::getAdminI18n(),
             'global_search_active'     => apply_filters('fluentform/global_search_active', 'yes'),
             'payments_str'             => TranslationString::getPaymentsI18n(),
@@ -454,6 +472,16 @@ class Menu
                 [$this, 'renderAllEntriesAdminRoute']
             );
 
+            // Register Reports sub menu page.
+            add_submenu_page(
+                'fluent_forms',
+                __('Reports', 'fluentform'),
+                __('Reports', 'fluentform'),
+                $fromRole ?  $settingsCapability : 'fluentform_entries_viewer',
+                'fluent_forms_reports',
+                [$this, 'renderReports']
+            );
+
             $isShowPaymentSubmission = apply_filters_deprecated(
                 'fluentform_show_payment_entries',
                 [
@@ -544,6 +572,7 @@ class Menu
                 'editor'   => 'fluentform_forms_manager',
                 'settings' => 'fluentform_forms_manager',
                 'entries'  => 'fluentform_entries_viewer',
+                'reports'  => 'fluentform_entries_viewer',
             ]);
 
             $toVerifyPermission = ArrayHelper::get(
@@ -1212,6 +1241,11 @@ class Menu
             'is_installed' => defined('FLUENTMAIL'),
             'setup_url'    => admin_url('options-general.php?page=fluent-mail#/connections'),
         ]);
+    }
+
+    public function renderReports()
+    {
+        do_action('fluentform/render_report');
     }
 
     private function usedNameAttributes($formId)
