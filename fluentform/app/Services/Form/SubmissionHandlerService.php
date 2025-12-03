@@ -219,7 +219,6 @@ class SubmissionHandlerService
         
         if ($insertId) {
             ob_start();
-            $formData = apply_filters('fluentform/submission_form_data', $formData, $insertId, $form);
             $this->submissionService->recordEntryDetails($insertId, $form->id, $formData);
             $isError = ob_get_clean();
             if ($isError) {
@@ -228,8 +227,6 @@ class SubmissionHandlerService
         }
         $error = '';
         try {
-            $formData = apply_filters('fluentform/submission_form_data', $formData, $insertId, $form);
-
             do_action('fluentform_submission_inserted', $insertId, $formData, $form);
     
             do_action('fluentform/submission_inserted', $insertId, $formData, $form);

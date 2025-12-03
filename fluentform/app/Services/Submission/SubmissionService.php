@@ -86,9 +86,6 @@ class SubmissionService
                     $submission->entry_uid_link  = $link;
                 }
             }
-        
-            $submission = apply_filters('fluentform/submission_before_parse', $submission, $form);
-        
             $submission = FormDataParser::parseFormEntry($submission, $form, null, true);
 
 

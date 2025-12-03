@@ -4,7 +4,7 @@ Tags: contact form, wp forms, forms, form builder, custom form
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 6.1.8
+Stable tag: 6.1.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -438,10 +438,14 @@ You can get support from our official support thread at <a href="https://wpmanag
 
 == Changelog ==
 
-= 6.1.8 (Date: December 1, 2025) =
+= 6.1.10 (Date: December 2, 2025) =
+- Fix global settings save issue
+- Support other option in Conversational Form
+- Fix form submission delay issue for a large condition set
+
+= 6.1.8 (Date: November 28, 2025) =
 - Improves client IP detection
 - Improves sanitizations and security
-- Adds reset button to Block form style customizer
 
 = 6.1.7 (Date: November 21, 2025) =
 - Added autosave feature global settings for Form Editor
