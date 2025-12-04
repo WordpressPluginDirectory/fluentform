@@ -426,7 +426,7 @@ class Converter
                     'pen_color'        => ArrayHelper::get($field, 'settings.sign_pen_color', '#333'),
                     'pen_size'         => ArrayHelper::get($field, 'settings.sign_pen_size', 2),
                     'pad_height'       => ArrayHelper::get($field, 'settings.sign_pad_height', 200),
-                    'instruction'      => self::getComponent()->replaceEditorSmartCodes(ArrayHelper::get($field, 'settings.sign_instruction', __('Sign Here', 'fluentform-signature')), $form),
+                    'instruction'      => self::getComponent()->replaceEditorSmartCodes(ArrayHelper::get($field, 'settings.sign_instruction', __('Sign Here', 'fluentform')), $form),
                 ];
                 $question['multiple'] = false;
                 
@@ -979,6 +979,12 @@ class Converter
             'nationalMode'     => true,
             'autoPlaceholder'  => 'aggressive',
             'formatOnDisplay'  => true,
+            'validationNumberTypes' => [
+                'MOBILE',
+                'FIXED_LINE_OR_MOBILE',
+                'FIXED_LINE',
+                'TOLL_FREE',
+            ]
         ];
         
         if ($geoLocate) {
