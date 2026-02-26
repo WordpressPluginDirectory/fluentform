@@ -72,6 +72,8 @@ return array(
     'FluentForm\\App\\Modules\\DashboardWidgetModule' => $baseDir . '/app/Modules/DashboardWidgetModule.php',
     'FluentForm\\App\\Modules\\DocumentationModule' => $baseDir . '/app/Modules/DocumentationModule.php',
     'FluentForm\\App\\Modules\\EditorButtonModule' => $baseDir . '/app/Modules/EditorButtonModule.php',
+    'FluentForm\\App\\Modules\\Entries\\Entries' => $baseDir . '/app/Modules/Entries/Entries.php',
+    'FluentForm\\App\\Modules\\Entries\\EntryQuery' => $baseDir . '/app/Modules/Entries/EntryQuery.php',
     'FluentForm\\App\\Modules\\Entries\\EntryViewRenderer' => $baseDir . '/app/Modules/Entries/EntryViewRenderer.php',
     'FluentForm\\App\\Modules\\Entries\\Export' => $baseDir . '/app/Modules/Entries/Export.php',
     'FluentForm\\App\\Modules\\Form\\AkismetHandler' => $baseDir . '/app/Modules/Form/AkismetHandler.php',
