@@ -247,6 +247,7 @@ class FormValidationService
                 throw new ValidationException('', 429, null,  [
                     'errors' => [
                         'restricted' => [
+                            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Sanitized by fluentform_sanitize_html
                             fluentform_sanitize_html(apply_filters(
                                 'fluentform/too_many_requests',
                                 __('Too Many Requests.', 'fluentform'),
@@ -288,10 +289,10 @@ class FormValidationService
         $isAllowed = apply_filters('fluentform/is_form_renderable', $isAllowed, $this->form);
 
         if (!$isAllowed['status']) {
-            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output
             throw new ValidationException('', 422, null,  [
                 'errors' => [
                     'restricted' => [
+                        // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Sanitized by fluentform_sanitize_html
                         fluentform_sanitize_html($isAllowed['message']),
                     ],
                 ],
@@ -318,7 +319,7 @@ class FormValidationService
     private function handleDenyEmptySubmission($settings, &$fields)
     {
         // Determine whether empty form submission is allowed or not.
-        if (Arr::get($settings, 'enabled')) {
+        if (Arr::isTrue($settings, 'enabled')) {
             // confirm this form has no required fields.
             if (!FormFieldsParser::hasRequiredFields($this->form, $fields)) {
                 // Filter out the form data which doesn't have values.
@@ -334,6 +335,7 @@ class FormValidationService
                     throw new ValidationException('', 422, null,  [
                         'errors' => [
                             'restricted' => [
+                                // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Sanitized by fluentform_sanitize_html
                                 !empty($customMessage) ? fluentform_sanitize_html($customMessage) : fluentform_sanitize_html($defaultMessage),
                             ],
                         ],
@@ -353,7 +355,7 @@ class FormValidationService
     protected function handleRestrictedSubmission($settings, &$fields)
     {
         // Determine this restriction is enabled ot not
-        if (!Arr::get($settings, 'enabled')) {
+        if (!Arr::isTrue($settings, 'enabled')) {
             return;
         }
 
@@ -366,7 +368,7 @@ class FormValidationService
             $this->checkIpRestriction($settings, $ip);
         }
 
-        $isCountryRestrictionEnabled = Arr::get($settings, 'fields.country.status');
+        $isCountryRestrictionEnabled = Arr::isTrue($settings, 'fields.country.status');
         if ($isCountryRestrictionEnabled) {
             if ($ipInfo = $this->getIpInfo($ip)) {
                 $country = Arr::get($ipInfo, 'country');
@@ -786,8 +788,8 @@ class FormValidationService
      */
     private function checkIpRestriction($settings, $ip)
     {
-        if (Arr::get($settings, 'fields.ip.status') && $ip) {
-            $providedIp = array_map('trim', explode(',', Arr::get($settings, 'fields.ip.values')));
+        if (Arr::isTrue($settings, 'fields.ip.status') && $ip) {
+            $providedIp = array_map('trim', explode(',', (string) Arr::get($settings, 'fields.ip.values', '')));
 
             $isFailed = Arr::get($settings, 'fields.ip.validation_type') === 'fail_on_condition_met';
 
@@ -807,8 +809,8 @@ class FormValidationService
      */
     private function checkCountryRestriction($settings, $country)
     {
-        if ($country) {
-            $providedCountry = Arr::get($settings, 'fields.country.values');
+        if (Arr::isTrue($settings, 'fields.country.status') && $country) {
+            $providedCountry = (array) Arr::get($settings, 'fields.country.values', []);
 
             $isFailed = Arr::get($settings, 'fields.country.validation_type') === 'fail_on_condition_met';
 
@@ -825,7 +827,7 @@ class FormValidationService
 
     private function checkKeyWordRestriction($settings)
     {
-        if (!Arr::get($settings, 'fields.keywords.status')) {
+        if (!Arr::isTrue($settings, 'fields.keywords.status')) {
             return;
         }
 
@@ -874,6 +876,7 @@ class FormValidationService
         throw new ValidationException('', 422, null,  [
             'errors' => [
                 'restricted' => [
+                    // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Sanitized by fluentform_sanitize_html
                     fluentform_sanitize_html($message)
                 ],
             ],

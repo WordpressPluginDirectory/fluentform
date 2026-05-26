@@ -3,9 +3,10 @@
 namespace FluentForm\App\Modules\Form;
 
 use FluentForm\App\Helpers\Helper;
+use FluentForm\App\Services\Transfer\TransferService;
 use FluentForm\Framework\Foundation\Application;
 use FluentForm\Framework\Helpers\ArrayHelper;
-use FluentForm\Framework\Request\File;
+use FluentForm\Framework\Http\Request\File;
 
 /* @deprecated Current File FluentForm\App\Http\Controllers\TransferController */
 
@@ -113,10 +114,14 @@ class Transfer
 
                     if (isset($formItem['metas'])) {
                         foreach ($formItem['metas'] as $metaData) {
+                            $metaKey = sanitize_text_field(ArrayHelper::get($metaData, 'meta_key'));
                             $settings = [
                                 'form_id'  => $formId,
-                                'meta_key' => $metaData['meta_key'],
-                                'value'    => $metaData['value'],
+                                'meta_key' => $metaKey,
+                                'value'    => TransferService::sanitizeImportedMetaValue(
+                                    $metaKey,
+                                    ArrayHelper::get($metaData, 'value')
+                                ),
                             ];
                             wpFluent()->table('fluentform_form_meta')->insert($settings);
                         }
@@ -171,6 +176,7 @@ class Transfer
             ->select(['meta_key', 'value'])
             ->where('form_id', $formId)
             ->whereNotIn('meta_key', ['_total_views', '_ff_form_styler_css'])
-            ->get();
+            ->get()
+            ->toArray();
     }
 }
