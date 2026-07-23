@@ -166,7 +166,10 @@ class ShortCodeParser
             }
 
             if ($isUrl) {
-                $value = rawurlencode($value);
+                // Don't encode values that are already complete URLs like {wp.site_url}
+                if (!preg_match('#^https?://#i', (string) $value)) {
+                    $value = rawurlencode($value);
+                }
             } else if ($htmlSanitized) {
                 $value = fluentform_sanitize_html($value);
             }
@@ -368,7 +371,9 @@ class ShortCodeParser
             return '';
         }
 
-        if (property_exists($entry, $key)) {
+        $columns = Helper::getEntryColumns($entry);
+
+        if (array_key_exists($key, $columns)) {
             if ('total_paid' == $key || 'payment_total' == $key) {
                 return round($entry->{$key} / 100, 2);
             }

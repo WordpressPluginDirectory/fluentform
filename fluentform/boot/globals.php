@@ -104,10 +104,11 @@ function fluentFormSanitizer($input, $attribute = null, $fields = [])
         
         foreach ($input as $key => &$value) {
             $key = fluentFormSanitizer($key);
-            $attribute = $attribute ? $attribute . '[' . $key . ']' : $key;
+            // Local var: mutating $attribute here would collapse every sibling
+            // after the first onto a bare key, resolving nested inputs to the wrong element.
+            $childAttribute = $attribute ? $attribute . '[' . $key . ']' : $key;
 
-            $value = fluentFormSanitizer($value, $attribute, $fields);
-            $attribute = null;
+            $value = fluentFormSanitizer($value, $childAttribute, $fields);
             $sanitizedInput[$key] = $value;
         }
         
@@ -256,14 +257,14 @@ function fluentFormHandleScheduledEmailReport()
     \FluentForm\App\Services\Scheduler\Scheduler::processEmailReport();
 }
 
-function fluentform_upgrade_url()
+function fluentform_upgrade_url($utmContent = '')
 {
-    return 'https://fluentforms.com/pricing/?utm_source=plugin&utm_medium=wp_install&utm_campaign=ff_upgrade&theme_style=' . fluentform_get_active_theme_slug();
+    return \FluentForm\App\Helpers\Helper::utmUrl('https://fluentforms.com/pricing/', $utmContent);
 }
 
-function fluentform_integrations_url()
+function fluentform_integrations_url($utmContent = '')
 {
-    return 'https://fluentforms.com/integration/?utm_source=plugin&utm_medium=wp_install&utm_campaign=ff_upgrade&theme_style=' . fluentform_get_active_theme_slug();
+    return \FluentForm\App\Helpers\Helper::utmUrl('https://fluentforms.com/integration/', $utmContent);
 }
 
 function fluentFormApi($module = 'forms')
@@ -438,6 +439,16 @@ function fluentform_kses_js($content)
     }
 
     return preg_replace('/<\/?script[^>]*>/is', '', $content);
+}
+
+function fluentform_sanitize_json_object($value)
+{
+    return \FluentForm\App\Services\FormBuilder\DateConfigNormalizer::sanitize($value);
+}
+
+function fluentform_date_config_to_js($json)
+{
+    return \FluentForm\App\Services\FormBuilder\DateConfigNormalizer::toJs($json);
 }
 
 /**

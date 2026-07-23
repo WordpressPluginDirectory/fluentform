@@ -160,6 +160,7 @@ add_action('admin_init', function () {
         remove_all_actions('admin_notices');
         \FluentForm\App\Modules\Registerer\ReviewQuery::register();
         \FluentForm\App\Modules\Registerer\MigrationNotice::register();
+        \FluentForm\App\Modules\Registerer\StripeKeyNotice::register();
     }
 });
 

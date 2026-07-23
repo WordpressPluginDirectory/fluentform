@@ -4,7 +4,7 @@ Tags: contact form, wp forms, forms, form builder, custom form
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 6.2.4
+Stable tag: 6.2.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -188,6 +188,8 @@ Fluent Forms Pro offers advanced conversational forms. Users can navigate questi
 
 == AI Form Builder ==
 Say hello to Free AI Form Builder! Fluent Forms AI Form Builder simplifies and speeds up form creation. Just describe your needs to generate effective forms with all necessary fields.
+
+**Data & Privacy:** The AI Form Builder relies on a hosted external service (ai.fluentforms.com) to generate your form. When you use this feature, the form description you enter along with your site URL and site title are sent to that service to build the form structure. Anonymous, aggregated usage data — such as the resulting form type and the field types generated — may be retained to help us improve the feature. Your visitors' form submissions are never sent. By using the AI Form Builder you consent to this data transfer. Learn more in our [Privacy Policy](https://fluentforms.com/privacy-policy/).
 
 == Accept Payments with Stripe ==
 Fluent Forms 6.0 now offers payment fields to free users, allowing Stripe payments for events, donations, or sales with a 1.9% transaction fee. Recurring payments are also included via the Subscription field. Pro removes the 1.9% fee, leaving only Stripe's charges.
@@ -438,8 +440,38 @@ You can get support from our official support thread at <a href="https://wpmanag
 
 == Changelog ==
 
+= 6.2.8 (Date: July 23, 2026) =
+- Fixes a stored XSS vulnerability in form submission handling
+
+= 6.2.7 (Date: July 16, 2026) =
+- Fixes date field restrictions configurations
+- Improves Advanced Date Configuration to support more restriction patterns: comparison operators, combined conditions, month/day/year rules, and fixed calendar dates
+- Improve Stripe API keys encryption to prevent being unusable after the site WordPress security salts change
+- Hardens the date field's inline script output against script-context injection
+
+= 6.2.6 (Date: July 10, 2026) =
+- Improves the Other option in conversational forms to be keyboard-activatable
+- Fixes a manager privilege escalation via a delegated WordPress role
+- Fixes a payment permission bypass letting form managers update transactions and cancel subscriptions
+- Fixes an oEmbed JSONP path-traversal XSS vulnerability
+- Fixes checkbox and radio Other option values not saving the translated label on multilingual sites
+- Fixes the Other option requiring a double-click to select in conversational radio and checkbox questions
+
+= 6.2.5 (Date: June 09, 2026) =
+- Improved the authorization scope for entry deletion so bulk and single deletes stay within the authorized request
+- Adds missing integrations to the addons list and global search
+- Fixes a conditional logic for empty fields could evaluate incorrectly restoring the v6.2.2 behavior
+- Fixes quiz question scores being lost on save when the settings start empty
+- Fixes a fatal error when opening the editor for a deleted form
+- Fixes duplicate field keys and broken drag-and-drop reorder in the editor advanced options
+- Fixes coupon not clearing when conditional logic hides the coupon field
+- Fixes overly long entry export URLs
+- Fixes full-URL smartcodes being double-encoded by the shortcode parser
+- Fixes submission and payment smartcodes not resolving on email/notification resend
+- Fixes scheduler temporary-file cleanup to honor the temp_file_delete_time filter
+
 = 6.2.4 (Date: May 25, 2026) =
-- Fixes conversational form pretty URLs rendering 
+- Fixes conversational form pretty URLs rendering
 - Fixes Pretty URL toggle not persisting when disabled
 - Fixes multi-step form submit visibility and step-skip logic
 - Adds a notice when the Fluent Forms REST endpoints are unreachable so the empty form and entry lists after an upgrade are easier to diagnose

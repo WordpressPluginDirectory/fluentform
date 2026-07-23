@@ -99,6 +99,7 @@ class Form
             'fonts'              => Fonts::getFonts(),
             'has_pro'            => defined('FLUENTFORMPRO'),
             'has_pro_share_page' => defined('FLUENTFORMPRO') && class_exists('\FluentFormPro\classes\SharePage\SharePage'),
+            'upgrade_url'        => fluentform_upgrade_url(),
         ]);
 
         wp_enqueue_style(
