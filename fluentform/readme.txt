@@ -4,7 +4,7 @@ Tags: contact form, wp forms, forms, form builder, custom form
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 6.2.8
+Stable tag: 6.2.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -439,6 +439,14 @@ You can get support from our official support thread at <a href="https://wpmanag
 12. Asset Loading Comparison with Other Plugins
 
 == Changelog ==
+
+= 6.2.11 (Date: August 03, 2026) =
+- Added safeguards for outdated Fluent Forms Pro installations.
+
+= 6.2.9 (Date: July 28, 2026) =
+- Hardens output escaping in the ff_get shortcode
+- Strengthens payment transaction reference generation for improved privacy
+- On block themes, loads public form styles only on pages that contain a form
 
 = 6.2.8 (Date: July 23, 2026) =
 - Fixes a stored XSS vulnerability in form submission handling

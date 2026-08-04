@@ -29,6 +29,8 @@ return function ($file) {
                 add_action('fluentform/after_form_menu', $renderNotice);
             });
         }
+
+        fluentform_maybe_disable_contaminated_pro();
     });
 
     $app = new Application($file);

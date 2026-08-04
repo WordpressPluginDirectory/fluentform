@@ -57,6 +57,34 @@ class Helper
         return $input;
     }
 
+    /**
+     * Flatten a request value into a plain, printable string.
+     *
+     * Request values are string or array. Walks nested arrays so a crafted
+     * param[][] cannot raise an "Array to string conversion" notice, and the
+     * caller can escape the result in one pass instead of branching on shape.
+     *
+     * @param mixed $value
+     *
+     * @return string
+     */
+    public static function flattenRequestValue($value)
+    {
+        if (!is_array($value)) {
+            return is_scalar($value) ? (string) $value : '';
+        }
+
+        $flat = [];
+
+        array_walk_recursive($value, function ($item) use (&$flat) {
+            if (is_scalar($item)) {
+                $flat[] = (string) $item;
+            }
+        });
+
+        return implode(', ', $flat);
+    }
+
     public static function isOptionGroup($option)
     {
         return is_array($option)

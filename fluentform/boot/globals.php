@@ -527,3 +527,51 @@ function fluentformGetPages()
 
     return $formattedPages;
 }
+
+function fluentform_maybe_disable_contaminated_pro()
+{
+    $unsafeProFile = WP_PLUGIN_DIR . '/fluentformpro/libs/class-license-sync.php';
+
+    if (! is_file($unsafeProFile)) {
+        return;
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+    deactivate_plugins(
+        'fluentformpro/fluentformpro.php',
+        true
+    );
+
+    $message = sprintf(
+        __('<strong>Fluent Forms Pro has been deactivated for security reasons.</strong> Delete the existing plugin and install a fresh copy from your %1$sWPManageNinja dashboard%2$s. Your Fluent Forms data will remain intact. We recommend %3$sopening a support ticket%4$s so we can help clean up your site. Read the %5$sincident report%6$s for details.', 'fluentform'),
+        '<a href="' . esc_url(add_query_arg('ff_deactivation_error', '1', 'https://wpmanageninja.com/account/downloads')) . '" target="_blank" rel="noopener noreferrer">',
+        '</a>',
+        '<a href="' . esc_url(add_query_arg('ff_deactivation_error', '1', 'https://wpmanageninja.com/account/support-tickets/submit-ticket/')) . '" target="_blank" rel="noopener noreferrer">',
+        '</a>',
+        '<a href="' . esc_url(add_query_arg('ff_deactivation_error', '1', 'https://wpmanageninja.com/security-incident-on-31-july-2026/')) . '" target="_blank" rel="noopener noreferrer">',
+        '</a>'
+    );
+
+    add_action('admin_init', function () use ($message) {
+        $renderNotice = function () use ($message) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Admin notice with HTML links
+            printf('<div class="fluentform-admin-notice notice notice-error"><div style="padding: 15px 10px;">%1$s</div></div>', $message);
+        };
+        add_action('fluentform/global_menu', $renderNotice);
+        add_action('fluentform/after_form_menu', $renderNotice);
+    });
+
+    add_action('admin_notices', function () use ($message) {
+        if (! current_user_can('activate_plugins')) {
+            return;
+        }
+        ?>
+        <div class="notice notice-error">
+            <p>
+                <?php echo $message; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Admin notice with HTML links ?>
+            </p>
+        </div>
+        <?php
+    });
+}
