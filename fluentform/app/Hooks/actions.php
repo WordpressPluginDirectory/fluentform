@@ -72,6 +72,21 @@ $app->addAction(
     }
 );
 
+/**
+ * Pro 6.2.13+ supplies the REST API used by Free's Vue license screen. Older
+ * Pro versions keep rendering their PHP page through this component action.
+ */
+$app->addAction(
+    'fluentform/global_settings_component_license_page',
+    function () use ($app) {
+        if (!defined('FLUENTFORMPRO_VERSION') || version_compare(FLUENTFORMPRO_VERSION, '6.2.13', '<')) {
+            return;
+        }
+
+        (new \FluentForm\App\Modules\Renderer\GlobalSettings\Settings($app))->render('license');
+    }
+);
+
 // Register DefaultStyleApplicator on init so it works for REST API requests too
 add_action('init', function () {
     new \FluentForm\App\Modules\Form\DefaultStyleApplicator();
@@ -163,6 +178,7 @@ add_action('admin_init', function () {
         \FluentForm\App\Modules\Registerer\ReviewQuery::register();
         \FluentForm\App\Modules\Registerer\MigrationNotice::register();
         \FluentForm\App\Modules\Registerer\StripeKeyNotice::register();
+        \FluentForm\App\Modules\Registerer\CaptchaKeyNotice::register();
     }
 });
 
@@ -280,6 +296,48 @@ $app->addAction('fluentform/loading_editor_assets', function ($form) {
 
             if (!isset($element['settings']['dynamic_default_value'])) {
                 $element['settings']['dynamic_default_value'] = '';
+            }
+
+            // The editor only renders a rule the field already carries, so forms
+            // built before selection limits existed need the keys backfilled.
+            $isMultiSelect = 'select' == $upgradeElement
+                && \FluentForm\Framework\Helpers\ArrayHelper::get($element, 'attributes.multiple');
+
+            if ('input_checkbox' == $upgradeElement || $isMultiSelect) {
+                $rules = \FluentForm\Framework\Helpers\ArrayHelper::get($element, 'settings.validation_rules', []);
+
+                foreach (['max_selection', 'min_selection'] as $selectionRule) {
+                    if (isset($rules[$selectionRule])) {
+                        continue;
+                    }
+
+                    $globalMessage = \FluentForm\App\Helpers\Helper::getGlobalDefaultMessage($selectionRule);
+
+                    // Carry the legacy ceiling across, or the editor would show
+                    // "no limit" on a form that has one and drop it on save.
+                    $value = '';
+                    if ('max_selection' === $selectionRule && $isMultiSelect) {
+                        $value = \FluentForm\Framework\Helpers\ArrayHelper::get($element, 'settings.max_selection', '');
+                    }
+
+                    $rules[$selectionRule] = [
+                        'value'          => $value,
+                        'message'        => $globalMessage,
+                        'global_message' => $globalMessage,
+                        'global'         => true,
+                    ];
+                }
+
+                // Key order is the panel's layout order. Rebuilt rather than
+                // appended, so forms saved by an earlier build get it too.
+                $ordered = [];
+                foreach (['required', 'max_selection', 'min_selection'] as $key) {
+                    if (isset($rules[$key])) {
+                        $ordered[$key] = $rules[$key];
+                    }
+                }
+
+                $element['settings']['validation_rules'] = $ordered + $rules;
             }
 
             if ('select_country' != $upgradeElement && !isset($element['settings']['randomize_options'])) {
@@ -969,6 +1027,18 @@ $app->addAction('fluentform/before_insert_submission', function ($insertData, $r
     $tokenBasedSpamProtection->verify($insertData, $requestData, $form->id);
 }, 9, 3);
 
+// The token-based spam check (FINDING-25) enforces on conversational forms too, but its ~1h TTL
+// token cannot be refreshed by the conversational JS app — it bakes hidden inputs statically at
+// render, so behind a full-page cache the token expires and rejects every legitimate submission.
+// Disable ONLY the token for conversational forms, resolved from server-side form meta (never the
+// client-supplied isFFConversational flag, which was the original bypass). The honeypot still applies.
+$app->addFilter('fluentform/token_based_spam_protection_status', function ($status, $formId) {
+    if ($status && \FluentForm\App\Helpers\Helper::isConversionForm($formId)) {
+        return false;
+    }
+    return $status;
+}, 10, 2);
+
 // Maybe update current user allowed form ids,
 // if current user has specific form permission and capable to create form
 $app->addAction('fluentform/inserted_new_form', function ($formId) {
@@ -1039,6 +1109,10 @@ add_action('fluentform/integration_action_result', function ($feed, $status, $no
         $note = $status;
     }
 
+    $note = is_scalar($note)
+        ? sanitize_text_field(wp_unslash((string) $note))
+        : sanitize_text_field((string) wp_json_encode($note));
+
     if (strlen($note) > 255) {
         if (function_exists('mb_substr')) {
             $note = mb_substr($note, 0, 251) . '...';
@@ -1069,6 +1143,10 @@ add_action('ff_integration_action_result', function ($feed, $status, $note = '')
     if (!$note) {
         $note = $status;
     }
+
+    $note = is_scalar($note)
+        ? sanitize_text_field(wp_unslash((string) $note))
+        : sanitize_text_field((string) wp_json_encode($note));
 
     if (strlen($note) > 255) {
         if (function_exists('mb_substr')) {
